@@ -1,13 +1,12 @@
-/*      Author: lab
+/*	Author: Taeho Yoo
  *  Partner(s) Name: 
- *      Lab Section:
-*      Assignment: Lab #  Exercise #
- *      Exercise Description: [optional - include for your own benefit]
- *
- *      I acknowledge all content contained herein, excluding template or example
- *      code, is my own original work.
+ *	Lab Section: 23
+ *	Assignment: Lab #7  Exercise #2
+ *	Exercise Description: [optional - include for your own benefit]
+ *	Demo Link:  https://www.youtube.com/watch?v=7-899qwU7A4&feature=youtu.be
+ *	I acknowledge all content contained herein, excluding template or example
+ *	code, is my own original work.
  */
-
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "io.h"
@@ -33,7 +32,7 @@ void TimerOn() {
 void TimerOff() { TCCR1B = 0x00; }
 void TimerISR() { TimerFlag = 1; }
 
-ISR(TIMER1_COMPA_vect) {
+ISR(TIMER1_COMPA_vect) { 
 	_avr_timer_cntcurr--;
 	if(_avr_timer_cntcurr == 0) {
 		TimerISR();
@@ -46,125 +45,146 @@ void TimerSet(unsigned long M) {
 	_avr_timer_cntcurr = _avr_timer_M;
 }
 
-unsigned char countOne = 0;
-unsigned char countTwo = 0;
-unsigned char counter = 0;
-enum States {Start, Off, WaitUntilThree, Increment, Decrement, Reset} state;
+enum States {Start, One, Two, Three, Four, Press,  Release}  state;
+unsigned char pressed = 0;
+unsigned char score = 5;
 
 void Tick() {
-	unsigned char temp = ~PINA & 0x03;
-	unsigned char tempB = 0x00;
-
 	switch(state) {
-		case Start:
-			PORTB = tempB;
-			state = Off;
-			LCD_Cursor(1);
-			LCD_WriteData('0');
-			break;
-		case Off:
-			if(temp == 0x01) {
-				state = Increment;
-				if(PORTB < 0x09) {
-					PORTB++;
-					LCD_Cursor(1);
-					LCD_WriteData(PORTB + '0');
-				}
-				break;
-			}
-			else if(temp == 0x02) {
-				state = Decrement;
-				if(PORTB > 0x00) {
-					PORTB--;
-					LCD_Cursor(1);
-					LCD_WriteData(PORTB + '0');
-				}
-				break;
-			}
-			else if(temp == 0x03) {
-				PORTB = 0;
-				state = Reset;
+			case Start:
+				PORTB = 0x00;
+				state = One;
 				LCD_Cursor(1);
-				LCD_WriteData('0');
+				LCD_WriteData(score + '0');
 				break;
-			}
-			else {
-				state = Off;
-				break;
-			}
-		case Increment:
-			state = WaitUntilThree;
-			break;
-		case Decrement:
-			state = WaitUntilThree;
-			break;
-		case WaitUntilThree:
-			if(temp == 0x01 || temp == 0x02) {
-				if(temp == 0x01) {
-					if(PORTB < 9) {
-						if(counter < 9) {
-							counter++;
-						}
-						else  {
-							counter = 0;
-							PORTB++;
-							LCD_Cursor(1);
-							LCD_WriteData(PORTB + '0');
-						}
-
-					}
-					state = WaitUntilThree;
+			case One:
+				if((~PINA & 0x01) == 1 && pressed == 0) {
+					state = Press;
+					if(score > 0) { 
+						score--;
+						LCD_Cursor(1);
+						LCD_WriteData(score + '0');
 
 				}
-				else if(temp == 0x02) {
-					if(PORTB > 0) {
-						if(counter < 9) {
-							counter++;
-						}
-						else {
-							counter = 0;
-							PORTB--;
-							LCD_Cursor(1);
-							LCD_WriteData(PORTB + '0');
-						}
-
-					}
-					state = WaitUntilThree;
+				else if((~PINA & 0x01) == 1 && pressed == 1) {
+					state = Two;
+			       	}
+				else {
+					state = Two;
+					pressed = 0;
 				}
-			}
-			else if(temp == 0x03) {
-				state = Reset;
-				LCD_Cursor(1);
-				LCD_WriteData('0');
-				PORTB = 0;
-			}
-			else {
-				state = Off;
-			}
-			break;
-		case Reset:
-			if(temp == 0x01 || temp == 0x02) {
-				state = Reset;
-			}
-			else {
-				state = Off;
-			}
-			break;
-		default:
-			break;
-	}
+				break;
+			case Two:
+				if((~PINA & 0x01) == 1 && pressed == 0) {
+					state = Press;
+					if(score < 9) {
+						score++;
+						LCD_Cursor(1);
+						LCD_WriteData(score + '0');
+					}
+					else { 
+						LCD_DisplayString(1, "YOU WON!!!"); 
+						score = 5; //reset score
+					}
+
+				}
+				else if((~PINA & 0x01) == 1 && pressed == 1) {
+					state = Three;
+				}
+				else {
+					state = Three;
+					pressed = 0;
+				}
+				break;
+			case Three:
+				if((~PINA & 0x01) == 1 && pressed == 0) {
+					state = Press;
+					if(score > 0) {
+						score--;
+						LCD_Cursor(1);
+						LCD_WriteData(score + '0');
+
+				}
+				else if((~PINA & 0x01) == 1 && pressed == 1)
+			      	{
+					state = Four;
+			       	}
+				else {
+					state = Four;
+					pressed = 0;
+				}
+				break;
+			case Four:
+				if((~PINA & 0x01) == 1 && pressed == 0) {
+					state = Press;
+					if(score < 9) {
+						score++;
+						LCD_Cursor(1);
+						LCD_WriteData(score + '0');
+					}
+					else {
+						LCD_DisplayString(1, "YOU WON!!!");
+						score = 5;
+					}
+				}
+				else if((~PINA & 0x01) == 1 && pressed == 1) {
+				       	state = One;
+			       	}
+				else {
+					state = One;
+					pressed = 0;
+				}
+				break;
+			case Press:
+				if((~PINA & 0x01) == 1) {
+					state = Press;
+				}
+				else { state = Release; }
+				break;
+			case Release:
+				if((~PINA & 0x01) == 1) {
+					state = One;
+					pressed = 1;
+				}
+				else { state = Release; }
+				break;
+			default:
+				break;
+		}
+		switch(state) {
+			case One:
+				PORTB = 0x01;
+				break;
+			case Two:
+				PORTB = 0x02;
+				break;
+			case Three:
+				PORTB = 0x04;
+				break;
+			case Four:
+				PORTB = 0x02;
+				break;
+			default:
+				break;
+		}
 }
+
 int main(void) {
-	DDRA = 0x00; PORTA = 0xFF;
+    /* Insert DDR and PORT initializations */
+	DDRB = 0xFF;
+	PORTB = 0x00;
+       	DDRA = 0x00;
+	PORTA = 0xFF;
 	DDRC = 0xFF; PORTC = 0x00;
 	DDRD = 0xFF; PORTD = 0x00;
-
+	
 	LCD_init();
-	TimerSet(100);
-	TimerOn();
 
+	TimerSet(300);
+	TimerOn();
+		
 	while(1) {
-		Tick();
+		Tick();		
 		while(!TimerFlag);
 		TimerFlag = 0;
 	}
