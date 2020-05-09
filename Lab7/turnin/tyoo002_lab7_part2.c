@@ -3,7 +3,7 @@
  *	Lab Section: 23
  *	Assignment: Lab #7  Exercise #2
  *	Exercise Description: [optional - include for your own benefit]
- *	Demo Link:  https://www.youtube.com/watch?v=7-899qwU7A4&feature=youtu.be
+ *	Demo Link: 
  *	I acknowledge all content contained herein, excluding template or example
  *	code, is my own original work.
  */
